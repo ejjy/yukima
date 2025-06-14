@@ -170,9 +170,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (scanError && scanError.code !== 'PGRST116') {
+      if (scanError) {
         console.error('Error loading scan result:', scanError);
       } else if (scanData) {
         const scanResult: ScanResult = {
