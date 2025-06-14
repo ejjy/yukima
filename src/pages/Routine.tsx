@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { ProductService } from '../services/productService';
+import { OpenAIService } from '../services/openaiService';
 import { Routine as RoutineType, RoutineStep, Product } from '../types';
 import Button from '../components/UI/Button';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
@@ -66,22 +66,24 @@ const Routine: React.FC = () => {
       const skinType = scanResult?.skinType || profile.skinType;
       const concerns = scanResult?.concerns || profile.concerns;
 
-      // Fetch recommended products from Supabase
-      const recommendedProducts = await ProductService.getRecommendedProducts({
-        skinType,
-        concerns,
-        budget: profile.budget,
-        productPreference: profile.productPreference
-      });
+      // Call OpenAI Service to generate routine
+      const routineRecommendation = await OpenAIService.generateRoutine(
+        {
+          ageRange: profile.ageRange,
+          skinType,
+          concerns,
+          budget: profile.budget,
+          productPreference: profile.productPreference
+        },
+        scanResult ? {
+          skinType: scanResult.skinType,
+          concerns: scanResult.concerns,
+          confidence: scanResult.confidence
+        } : undefined
+      );
 
-      // Create morning and evening routines with budget optimization
-      const { morningSteps, eveningSteps, totalCost } = createOptimizedRoutine(recommendedProducts, profile.budget);
-
-      const newRoutine: RoutineType = {
-        morning: morningSteps,
-        evening: eveningSteps,
-        totalCost
-      };
+      // Map OpenAI response to application format
+      const newRoutine = mapOpenAIResponseToRoutine(routineRecommendation);
 
       setRoutine(newRoutine);
 
@@ -92,72 +94,160 @@ const Routine: React.FC = () => {
     } catch (error) {
       console.error('Error generating routine:', error);
       
-      // Fallback to mock data if Supabase fails
-      console.log('Falling back to mock data...');
-      const { products } = await import('../data/products');
-      const { morningSteps, eveningSteps, totalCost } = createOptimizedRoutine(products.slice(0, 10), profile.budget);
-      
-      const newRoutine: RoutineType = {
-        morning: morningSteps,
-        evening: eveningSteps,
-        totalCost
-      };
-
-      setRoutine(newRoutine);
+      // Fallback to hardcoded mock routine if OpenAI fails
+      console.log('Falling back to mock routine...');
+      const mockRoutine = createMockRoutine();
+      setRoutine(mockRoutine);
     } finally {
       setLoading(false);
     }
   };
 
-  const createOptimizedRoutine = (products: Product[], budget: number) => {
-    // Define routine structure
-    const morningOrder = ['Cleanser', 'Toner', 'Serum', 'Moisturizer', 'Sunscreen'];
-    const eveningOrder = ['Cleanser', 'Toner', 'Serum', 'Moisturizer', 'Mask'];
-    
-    const createSteps = (order: string[], period: 'morning' | 'evening'): RoutineStep[] => {
-      const steps: RoutineStep[] = [];
-      let remainingBudget = budget / 2; // Split budget between morning and evening
-      
-      order.forEach((stepType, index) => {
-        const stepProducts = products.filter(p => p.step === stepType);
-        
-        if (stepProducts.length > 0) {
-          // Sort by regional relevance first, then by price within budget
-          const affordableProducts = stepProducts
-            .filter(p => p.price <= remainingBudget)
-            .sort((a, b) => {
-              const relevanceScore = { 'High': 3, 'Medium': 2, 'Low': 1 };
-              const aScore = relevanceScore[a.regionalRelevance];
-              const bScore = relevanceScore[b.regionalRelevance];
-              
-              if (aScore !== bScore) return bScore - aScore;
-              return a.price - b.price; // Prefer lower price if same relevance
-            });
+  const mapOpenAIResponseToRoutine = (routineRecommendation: any): RoutineType => {
+    const mapRoutineSteps = (steps: any[], period: 'morning' | 'evening'): RoutineStep[] => {
+      return steps.map((step, index) => {
+        // Create Product object from OpenAI response
+        const product: Product = {
+          id: `${period}-${index}-${step.brand?.toLowerCase().replace(/\s+/g, '-')}-${step.product?.toLowerCase().replace(/\s+/g, '-')}`,
+          name: step.product || 'Unknown Product',
+          step: step.step?.split('. ')[1] || 'Unknown Step',
+          skinType: [profile?.skinType || 'All'],
+          concernTags: profile?.concerns || [],
+          price: step.price || 0,
+          budgetTier: profile?.budget || 999,
+          regionalRelevance: getRegionalRelevance(step.brand),
+          brand: step.brand || 'Unknown Brand',
+          category: step.step?.split('. ')[1] || 'Unknown',
+          description: step.reasoning || 'AI-recommended product for your skin type'
+        };
 
-          // If no affordable products, get the cheapest one
-          const selectedProduct = affordableProducts.length > 0 
-            ? affordableProducts[0]
-            : stepProducts.sort((a, b) => a.price - b.price)[0];
-
-          steps.push({
-            step: `${index + 1}. ${stepType}`,
-            product: selectedProduct,
-            completed: false
-          });
-
-          remainingBudget -= selectedProduct.price;
-        }
+        return {
+          step: step.step || `${index + 1}. ${step.product}`,
+          product,
+          completed: false
+        };
       });
-
-      return steps;
     };
 
-    const morningSteps = createSteps(morningOrder, 'morning');
-    const eveningSteps = createSteps(eveningOrder, 'evening');
-    const totalCost = [...morningSteps, ...eveningSteps]
-      .reduce((sum, step) => sum + step.product.price, 0);
+    const morningSteps = mapRoutineSteps(routineRecommendation.morning || [], 'morning');
+    const eveningSteps = mapRoutineSteps(routineRecommendation.evening || [], 'evening');
 
-    return { morningSteps, eveningSteps, totalCost };
+    return {
+      morning: morningSteps,
+      evening: eveningSteps,
+      totalCost: routineRecommendation.totalCost || 0
+    };
+  };
+
+  const getRegionalRelevance = (brand: string): 'High' | 'Medium' | 'Low' => {
+    const indianBrands = ['Himalaya', 'Biotique', 'Mamaearth', 'Plum', 'Minimalist', 'Dot & Key', 'Lotus', 'Lakme'];
+    const internationalBrands = ['Cetaphil', 'Neutrogena', 'Olay', 'The Ordinary', 'L\'Oreal'];
+    
+    if (indianBrands.some(indianBrand => brand?.toLowerCase().includes(indianBrand.toLowerCase()))) {
+      return 'High';
+    } else if (internationalBrands.some(intlBrand => brand?.toLowerCase().includes(intlBrand.toLowerCase()))) {
+      return 'Medium';
+    }
+    return 'Low';
+  };
+
+  const createMockRoutine = (): RoutineType => {
+    const mockMorningSteps: RoutineStep[] = [
+      {
+        step: '1. Cleanser',
+        product: {
+          id: 'mock-cleanser',
+          name: 'Gentle Face Wash',
+          step: 'Cleanser',
+          skinType: [profile?.skinType || 'Normal'],
+          concernTags: profile?.concerns || [],
+          price: 299,
+          budgetTier: 299,
+          regionalRelevance: 'Medium',
+          brand: 'Cetaphil',
+          category: 'Cleanser',
+          description: 'Gentle cleanser suitable for daily use'
+        },
+        completed: false
+      },
+      {
+        step: '2. Moisturizer',
+        product: {
+          id: 'mock-moisturizer',
+          name: 'Daily Moisturizer',
+          step: 'Moisturizer',
+          skinType: [profile?.skinType || 'Normal'],
+          concernTags: profile?.concerns || [],
+          price: 299,
+          budgetTier: 499,
+          regionalRelevance: 'Medium',
+          brand: 'Neutrogena',
+          category: 'Moisturizer',
+          description: 'Lightweight daily moisturizer'
+        },
+        completed: false
+      },
+      {
+        step: '3. Sunscreen',
+        product: {
+          id: 'mock-sunscreen',
+          name: 'Sunscreen SPF 30',
+          step: 'Sunscreen',
+          skinType: ['All'],
+          concernTags: ['Sun Protection'],
+          price: 220,
+          budgetTier: 299,
+          regionalRelevance: 'High',
+          brand: 'Lotus',
+          category: 'Sunscreen',
+          description: 'Essential daily sun protection'
+        },
+        completed: false
+      }
+    ];
+
+    const mockEveningSteps: RoutineStep[] = [
+      {
+        step: '1. Cleanser',
+        product: {
+          id: 'mock-cleanser-evening',
+          name: 'Gentle Face Wash',
+          step: 'Cleanser',
+          skinType: [profile?.skinType || 'Normal'],
+          concernTags: profile?.concerns || [],
+          price: 299,
+          budgetTier: 299,
+          regionalRelevance: 'Medium',
+          brand: 'Cetaphil',
+          category: 'Cleanser',
+          description: 'Remove daily impurities'
+        },
+        completed: false
+      },
+      {
+        step: '2. Night Cream',
+        product: {
+          id: 'mock-night-cream',
+          name: 'Night Recovery Cream',
+          step: 'Moisturizer',
+          skinType: [profile?.skinType || 'Normal'],
+          concernTags: profile?.concerns || [],
+          price: 450,
+          budgetTier: 999,
+          regionalRelevance: 'Medium',
+          brand: 'Olay',
+          category: 'Night Treatment',
+          description: 'Overnight skin repair and hydration'
+        },
+        completed: false
+      }
+    ];
+
+    return {
+      morning: mockMorningSteps,
+      evening: mockEveningSteps,
+      totalCost: 1267
+    };
   };
 
   const handleStepToggle = (period: 'morning' | 'evening', stepIndex: number) => {
