@@ -20,7 +20,7 @@ const translations = {
     
     // Welcome Page
     'welcome.title': 'Your Glow Journey Starts Here',
-    'welcome.subtitle': 'AI-powered skincare routines tailored for Indian women',
+    'welcome.subtitle': 'AI-powered skincare routines tailored for Indian women aged 18-45',
     'welcome.cta': 'Start Glow Journey',
     'welcome.features.personalized': 'Personalized for your skin',
     'welcome.features.budget': 'Budget-friendly options',
@@ -67,6 +67,20 @@ const translations = {
     'ingredients.check': 'Check ingredients for your skin type',
     'ingredients.alerts': 'Safety Alerts',
     
+    // Age-specific content
+    'age.18-24.focus': 'Prevention & Habit Building',
+    'age.25-30.focus': 'Early Anti-Aging',
+    'age.31-35.focus': 'Advanced Treatments',
+    'age.36-40.focus': 'Intensive Care',
+    'age.41-45.focus': 'Premium Solutions',
+    
+    // Premium features
+    'premium.title': 'Premium Skincare Experience',
+    'premium.subtitle': 'Unlock advanced features for mature skin',
+    'premium.features.consultation': 'Virtual dermatologist consultations',
+    'premium.features.custom': 'Custom formulation recommendations',
+    'premium.features.tracking': 'Advanced progress tracking',
+    
     // Common
     'common.loading': 'Loading...',
     'common.error': 'Something went wrong',
@@ -90,7 +104,7 @@ const translations = {
     
     // Welcome Page
     'welcome.title': 'आपकी चमक की यात्रा यहाँ शुरू होती है',
-    'welcome.subtitle': 'भारतीय महिलाओं के लिए AI-संचालित स्किनकेयर रूटीन',
+    'welcome.subtitle': '18-45 वर्षीय भारतीय महिलाओं के लिए AI-संचालित स्किनकेयर रूटीन',
     'welcome.cta': 'शुरू करें',
     'welcome.features.personalized': 'आपकी त्वचा के लिए व्यक्तिगत',
     'welcome.features.budget': 'बजट-अनुकूल विकल्प',
@@ -108,7 +122,7 @@ const translations = {
     'quiz.next': 'आगे',
     'quiz.back': 'पीछे',
     'quiz.submit': 'मेरा रूटीन पाएं',
-    'quiz.privacy': 'आपका डेटा व्यक्तिगतकरण के लिए सुरक्षित रूप से संग्रहीत है और सत्र के बाद हटा दिया जाता है।',
+    'quiz.privacy': 'आपका डेटा व्यक्तिगतकरण के लिए सुरक्षित रूप से संग्रहीत है।',
     
     // Face Scan
     'scan.title': 'AI त्वचा विश्लेषण',
@@ -136,6 +150,20 @@ const translations = {
     'ingredients.title': 'सामग्री सुरक्षा',
     'ingredients.check': 'अपनी त्वचा के प्रकार के लिए सामग्री की जांच करें',
     'ingredients.alerts': 'सुरक्षा चेतावनी',
+    
+    // Age-specific content
+    'age.18-24.focus': 'रोकथाम और आदत निर्माण',
+    'age.25-30.focus': 'प्रारंभिक एंटी-एजिंग',
+    'age.31-35.focus': 'उन्नत उपचार',
+    'age.36-40.focus': 'गहन देखभाल',
+    'age.41-45.focus': 'प्रीमियम समाधान',
+    
+    // Premium features
+    'premium.title': 'प्रीमियम स्किनकेयर अनुभव',
+    'premium.subtitle': 'परिपक्व त्वचा के लिए उन्नत सुविधाएं अनलॉक करें',
+    'premium.features.consultation': 'वर्चुअल त्वचा विशेषज्ञ परामर्श',
+    'premium.features.custom': 'कस्टम फॉर्मूलेशन सिफारिशें',
+    'premium.features.tracking': 'उन्नत प्रगति ट्रैकिंग',
     
     // Common
     'common.loading': 'लोड हो रहा है...',
