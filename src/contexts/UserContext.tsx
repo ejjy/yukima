@@ -3,6 +3,28 @@ import { UserProfile, Routine, RoutineStep, ScanResult } from '../types';
 import { useAuth } from './AuthContext';
 import { supabase } from '../utils/supabaseClient';
 
+interface Notification {
+  id: string;
+  message: string;
+  type: string;
+  read: boolean;
+  created_at: string;
+  expires_at: string;
+}
+
+interface RoutineHistoryItem {
+  id: string;
+  morning_routine: any;
+  evening_routine: any;
+  total_cost: number;
+  ai_generated: boolean;
+  confidence_score: number;
+  created_at: string;
+  updated_at: string;
+  total_steps: number;
+  detected_skin_type: string;
+}
+
 interface UserContextType {
   profile: UserProfile | null;
   setProfile: (profile: UserProfile) => void;
@@ -14,6 +36,19 @@ interface UserContextType {
   clearSession: () => void;
   saveToDatabase: () => Promise<void>;
   loadFromDatabase: () => Promise<void>;
+  
+  // Routine History
+  routineHistory: RoutineHistoryItem[];
+  loadRoutineHistory: () => Promise<void>;
+  
+  // Notifications & Nudges
+  notifications: Notification[];
+  unreadCount: number;
+  nudgesEnabled: boolean;
+  loadNotifications: () => Promise<void>;
+  markNotificationAsRead: (notificationId: string) => Promise<void>;
+  markAllNotificationsAsRead: () => Promise<void>;
+  toggleNudges: (enabled: boolean) => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -23,11 +58,16 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [profile, setProfileState] = useState<UserProfile | null>(null);
   const [routine, setRoutineState] = useState<Routine | null>(null);
   const [scanResult, setScanResultState] = useState<ScanResult | null>(null);
+  const [routineHistory, setRoutineHistory] = useState<RoutineHistoryItem[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [nudgesEnabled, setNudgesEnabled] = useState(false);
 
   // Load data when user authenticates
   useEffect(() => {
     if (isAuthenticated && user) {
       loadFromDatabase();
+      loadRoutineHistory();
+      loadNotifications();
     } else {
       // Load from session storage for unauthenticated users
       loadFromSessionStorage();
@@ -100,6 +140,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           consent: true
         };
         setProfileState(profile);
+        setNudgesEnabled(profileData.nudges_enabled || false);
       }
 
       // Load user routine
@@ -148,6 +189,123 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const loadRoutineHistory = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('routine_history')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        console.error('Error loading routine history:', error);
+        return;
+      }
+
+      setRoutineHistory(data || []);
+    } catch (error) {
+      console.error('Error loading routine history:', error);
+    }
+  };
+
+  const loadNotifications = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        console.error('Error loading notifications:', error);
+        return;
+      }
+
+      setNotifications(data || []);
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+    }
+  };
+
+  const markNotificationAsRead = async (notificationId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_notifications')
+        .update({ read: true })
+        .eq('id', notificationId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error marking notification as read:', error);
+        return;
+      }
+
+      // Update local state
+      setNotifications(prev => 
+        prev.map(notif => 
+          notif.id === notificationId 
+            ? { ...notif, read: true }
+            : notif
+        )
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_notifications')
+        .update({ read: true })
+        .eq('user_id', user.id)
+        .eq('read', false);
+
+      if (error) {
+        console.error('Error marking all notifications as read:', error);
+        return;
+      }
+
+      // Update local state
+      setNotifications(prev => 
+        prev.map(notif => ({ ...notif, read: true }))
+      );
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  };
+
+  const toggleNudges = async (enabled: boolean) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ nudges_enabled: enabled })
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error updating nudges preference:', error);
+        return;
+      }
+
+      setNudgesEnabled(enabled);
+    } catch (error) {
+      console.error('Error updating nudges preference:', error);
+    }
+  };
+
   const saveToDatabase = async () => {
     if (!user || !isAuthenticated) return;
 
@@ -164,6 +322,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             budget: profile.budget,
             product_preference: profile.productPreference,
             language: profile.language,
+            nudges_enabled: nudgesEnabled,
             updated_at: new Date().toISOString()
           });
 
@@ -181,6 +340,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             morning_routine: routine.morning,
             evening_routine: routine.evening,
             total_cost: routine.totalCost,
+            ai_generated: true,
+            confidence_score: 85, // Default confidence score
             updated_at: new Date().toISOString()
           });
 
@@ -225,6 +386,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (isAuthenticated) {
       // Auto-save to database for authenticated users
       setTimeout(saveToDatabase, 100);
+      // Refresh routine history
+      setTimeout(loadRoutineHistory, 500);
     } else {
       saveToSessionStorage(undefined, newRoutine);
     }
@@ -253,10 +416,15 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setProfileState(null);
     setRoutineState(null);
     setScanResultState(null);
+    setRoutineHistory([]);
+    setNotifications([]);
+    setNudgesEnabled(false);
     sessionStorage.removeItem('yukima_profile');
     sessionStorage.removeItem('yukima_routine');
     sessionStorage.removeItem('yukima_scan_result');
   };
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
     <UserContext.Provider value={{
@@ -269,7 +437,16 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       updateRoutineStep,
       clearSession,
       saveToDatabase,
-      loadFromDatabase
+      loadFromDatabase,
+      routineHistory,
+      loadRoutineHistory,
+      notifications,
+      unreadCount,
+      nudgesEnabled,
+      loadNotifications,
+      markNotificationAsRead,
+      markAllNotificationsAsRead,
+      toggleNudges
     }}>
       {children}
     </UserContext.Provider>

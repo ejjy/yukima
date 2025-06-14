@@ -1,15 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useUser } from '../../contexts/UserContext';
-import { Globe, Sparkles, User, LogOut } from 'lucide-react';
+import { Globe, Sparkles, User, LogOut, Bell, History } from 'lucide-react';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const { language, setLanguage, t } = useLanguage();
   const { user, signOut, isAuthenticated } = useAuth();
-  const { clearSession } = useUser();
+  const { clearSession, notifications, unreadCount, markNotificationAsRead, markAllNotificationsAsRead } = useUser();
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const toggleLanguage = () => {
     setLanguage(language === 'English' ? 'Hindi' : 'English');
@@ -25,6 +26,24 @@ const Header: React.FC = () => {
 
   const handleAuthClick = () => {
     navigate('/auth');
+  };
+
+  const handleNotificationClick = (notificationId: string) => {
+    markNotificationAsRead(notificationId);
+  };
+
+  const handleViewHistory = () => {
+    navigate('/routine-history');
+  };
+
+  const formatNotificationTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    return date.toLocaleDateString();
   };
 
   return (
@@ -51,6 +70,85 @@ const Header: React.FC = () => {
               {language === 'English' ? 'हिं' : 'EN'}
             </span>
           </button>
+
+          {/* Notifications Bell - Only for authenticated users */}
+          {isAuthenticated && (
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-1.5 rounded-full hover:bg-soft-gray transition-colors duration-200"
+                aria-label="Notifications"
+              >
+                <Bell className="w-4 h-4 text-deep-charcoal" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary-blush text-white text-xs rounded-full flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Notifications Dropdown */}
+              {showNotifications && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                  <div className="p-4 border-b border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-gray-900">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={markAllNotificationsAsRead}
+                          className="text-xs text-primary-blush hover:text-primary-blush/80"
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="max-h-64 overflow-y-auto">
+                    {notifications.length > 0 ? (
+                      notifications.slice(0, 5).map((notification) => (
+                        <div
+                          key={notification.id}
+                          className={`p-3 border-b border-gray-50 hover:bg-gray-50 cursor-pointer ${
+                            !notification.read ? 'bg-blue-50' : ''
+                          }`}
+                          onClick={() => handleNotificationClick(notification.id)}
+                        >
+                          <p className="text-sm text-gray-800 mb-1">{notification.message}</p>
+                          <p className="text-xs text-gray-500">
+                            {formatNotificationTime(notification.created_at)}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-gray-500 text-sm">
+                        No notifications yet
+                      </div>
+                    )}
+                  </div>
+                  
+                  {notifications.length > 5 && (
+                    <div className="p-3 border-t border-gray-100 text-center">
+                      <button className="text-xs text-primary-blush hover:text-primary-blush/80">
+                        View all notifications
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Routine History - Only for authenticated users */}
+          {isAuthenticated && (
+            <button
+              onClick={handleViewHistory}
+              className="p-1.5 rounded-full hover:bg-soft-gray transition-colors duration-200"
+              aria-label="Routine history"
+            >
+              <History className="w-4 h-4 text-deep-charcoal" />
+            </button>
+          )}
 
           {/* Auth Button */}
           {isAuthenticated ? (
@@ -80,6 +178,14 @@ const Header: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Click outside to close notifications */}
+      {showNotifications && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setShowNotifications(false)}
+        />
+      )}
     </header>
   );
 };

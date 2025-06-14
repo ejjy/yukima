@@ -12,6 +12,8 @@ import Auth from './pages/Auth';
 import FaceScan from './pages/FaceScan';
 import ScanResult from './pages/ScanResult';
 import Routine from './pages/Routine';
+import RoutineHistory from './pages/RoutineHistory';
+import UserSettings from './pages/UserSettings';
 import DupeFinder from './pages/DupeFinder';
 import IngredientAlerts from './pages/IngredientAlerts';
 
@@ -31,6 +33,8 @@ function App() {
                   <Route path="/scan" element={<FaceScan />} />
                   <Route path="/scan-result" element={<ScanResult />} />
                   <Route path="/routine" element={<Routine />} />
+                  <Route path="/routine-history" element={<RoutineHistory />} />
+                  <Route path="/settings" element={<UserSettings />} />
                   <Route path="/dupes" element={<DupeFinder />} />
                   <Route path="/ingredients" element={<IngredientAlerts />} />
                 </Routes>
