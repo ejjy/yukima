@@ -7,15 +7,15 @@ export default {
   theme: {
     extend: {
       colors: {
-        // NEW PRIMARY COLORS - Updated for MVP
-        'primary-blush': '#F7C6D1',      // Soft blush pink for buttons, accents
-        'primary-lavender': '#D9C2F0',   // Soft lavender for headers, secondary elements
-        'pure-white': '#FFFFFF',         // Clean white for backgrounds
+        // NEW BOLD PRIMARY COLORS - Enhanced for Indian aesthetics
+        'primary-blush': '#D81B60',      // Rose Bloom - Rich, bold pink inspired by Indian roses
+        'primary-lavender': '#7B1FA2',   // Amethyst Glow - Deep purple with jewel-like vibrancy
+        'pure-white': '#FFFFFF',         // Pure White - Clean and airy backgrounds
         
-        // NEW SUPPORTING COLORS
-        'soft-gray': '#F0F0F0',          // Light gray for dividers, skeleton loaders
-        'deep-charcoal': '#2D2D2D',      // Dark charcoal for text
-        'golden-amber': '#FF8A80',       // Coral glow for CTAs, savings highlights
+        // NEW BOLD SUPPORTING COLORS
+        'soft-gray': '#ECEFF1',          // Soft Pearl - Subtle for dividers, skeleton loaders
+        'deep-charcoal': '#212121',      // Deep Onyx - High contrast text
+        'golden-amber': '#FBC02D',       // Mango Burst - Vibrant yellow inspired by Indian mangoes
         
         // OPTIONAL DARK THEME COLORS (for future use)
         'dark-background': '#1C1C1C',
@@ -90,8 +90,8 @@ export default {
           '50%': { transform: 'translateY(-10px)' },
         },
         glow: {
-          'from': { boxShadow: '0 0 20px rgba(247, 198, 209, 0.3)' },
-          'to': { boxShadow: '0 0 30px rgba(247, 198, 209, 0.6)' },
+          'from': { boxShadow: '0 0 20px rgba(216, 27, 96, 0.3)' },
+          'to': { boxShadow: '0 0 30px rgba(216, 27, 96, 0.6)' },
         },
         float: {
           '0%, 100%': { transform: 'translateY(0px)' },
