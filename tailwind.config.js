@@ -7,23 +7,23 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Darker Primary Colors
-        'primary-blush': '#E91E63',      // Much darker pink (Material Design Pink 500)
-        'primary-lavender': '#9C27B0',   // Much darker purple (Material Design Purple 500)
-        'pure-white': '#FFFFFF',
+        // NEW PRIMARY COLORS - Updated for MVP
+        'primary-blush': '#F7C6D1',      // Soft blush pink for buttons, accents
+        'primary-lavender': '#D9C2F0',   // Soft lavender for headers, secondary elements
+        'pure-white': '#FFFFFF',         // Clean white for backgrounds
         
-        // Supporting Colors
-        'soft-gray': '#EDEDED',
-        'deep-charcoal': '#333333',
-        'golden-amber': '#F4A261',
+        // NEW SUPPORTING COLORS
+        'soft-gray': '#F0F0F0',          // Light gray for dividers, skeleton loaders
+        'deep-charcoal': '#2D2D2D',      // Dark charcoal for text
+        'golden-amber': '#FF8A80',       // Coral glow for CTAs, savings highlights
         
-        // Dark Theme Colors (for future use)
-        'dark-background': '#1A1A1A',
-        'muted-pink': '#E8A3B1',
-        'muted-lavender': '#C19FD6',
-        'light-gray-dark': '#CCCCCC',
+        // OPTIONAL DARK THEME COLORS (for future use)
+        'dark-background': '#1C1C1C',
+        'muted-pink': '#E7A8B6',
+        'muted-lavender': '#C4A8E0',
+        'light-gray-dark': '#D0D0D0',
         
-        // Legacy colors (keeping for backward compatibility)
+        // Legacy colors (keeping for backward compatibility during transition)
         primary: {
           50: '#fdf2f8',
           100: '#fce7f3',
@@ -90,8 +90,8 @@ export default {
           '50%': { transform: 'translateY(-10px)' },
         },
         glow: {
-          'from': { boxShadow: '0 0 20px rgba(233, 30, 99, 0.3)' },
-          'to': { boxShadow: '0 0 30px rgba(233, 30, 99, 0.6)' },
+          'from': { boxShadow: '0 0 20px rgba(247, 198, 209, 0.3)' },
+          'to': { boxShadow: '0 0 30px rgba(247, 198, 209, 0.6)' },
         },
         float: {
           '0%, 100%': { transform: 'translateY(0px)' },
