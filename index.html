@@ -2,12 +2,58 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/png" href="/yukima-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Yukima - AI Skincare Assistant</title>
+    <meta name="description" content="AI-powered, budget-friendly skincare routines for Indian women aged 18-35" />
+    <meta name="theme-color" content="#E91E63" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- PWA Meta Tags -->
+    <link rel="apple-touch-icon" href="/yukima-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Yukima">
+    
+    <title>Yukima - AI Skincare for Indian Women</title>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Plausible Analytics (Mock implementation for MVP)
+      window.plausible = window.plausible || function() { 
+        (window.plausible.q = window.plausible.q || []).push(arguments) 
+      };
+      
+      // Track page views
+      window.addEventListener('load', function() {
+        if (window.plausible) {
+          window.plausible('pageview');
+        }
+      });
+      
+      // Track quiz completions
+      window.trackQuizCompletion = function() {
+        if (window.plausible) {
+          window.plausible('Quiz Completed');
+        }
+      };
+      
+      // Track routine checklist usage
+      window.trackRoutineStep = function(step) {
+        if (window.plausible) {
+          window.plausible('Routine Step Completed', { props: { step: step } });
+        }
+      };
+      
+      // Track CTA clicks
+      window.trackCTAClick = function(cta) {
+        if (window.plausible) {
+          window.plausible('CTA Clicked', { props: { cta: cta } });
+        }
+      };
+    </script>
   </body>
 </html>
