@@ -35,15 +35,15 @@ const Routine: React.FC = () => {
     }
   }, [profile, routine]);
 
-  // Show CTA after user completes 5 routine steps
+  // Show CTA after user completes 5 routine steps (only for authenticated users)
   useEffect(() => {
-    if (routine) {
+    if (routine && isAuthenticated) {
       const completedSteps = [...routine.morning, ...routine.evening].filter(step => step.completed).length;
       if (completedSteps >= 5) {
         setTimeout(() => setShowCTA(true), 1000);
       }
     }
-  }, [routine]);
+  }, [routine, isAuthenticated]);
 
   // Auto-switch to evening routine after 6 PM
   useEffect(() => {
@@ -262,8 +262,8 @@ const Routine: React.FC = () => {
           </p>
         </div>
 
-        {/* Progress Overview */}
-        <RoutineProgress routine={routine} />
+        {/* Progress Overview - Only show for authenticated users */}
+        {isAuthenticated && <RoutineProgress routine={routine} />}
 
         {/* Period Toggle */}
         <div className="flex bg-white rounded-xl p-1 shadow-sm border border-blush-100 mb-6">
@@ -331,8 +331,8 @@ const Routine: React.FC = () => {
           </div>
         )}
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-3 gap-2 mb-6">
+        {/* Quick Actions - Only show timer for authenticated users */}
+        <div className={`grid ${isAuthenticated ? 'grid-cols-3' : 'grid-cols-2'} gap-2 mb-6`}>
           <Button
             variant="outline"
             onClick={handleFindDupes}
@@ -351,18 +351,21 @@ const Routine: React.FC = () => {
             <span>Ingredients</span>
           </Button>
 
-          <Button
-            variant="outline"
-            onClick={() => setActiveTimer(activeTimer ? null : 'routine')}
-            className="flex flex-col items-center space-y-1 py-3 text-xs"
-          >
-            <Timer className="w-4 h-4" />
-            <span>Timer</span>
-          </Button>
+          {/* Timer only for authenticated users */}
+          {isAuthenticated && (
+            <Button
+              variant="outline"
+              onClick={() => setActiveTimer(activeTimer ? null : 'routine')}
+              className="flex flex-col items-center space-y-1 py-3 text-xs"
+            >
+              <Timer className="w-4 h-4" />
+              <span>Timer</span>
+            </Button>
+          )}
         </div>
 
-        {/* Active Timer */}
-        {activeTimer && currentRoutineSteps.length > 0 && (
+        {/* Active Timer - Only for authenticated users */}
+        {isAuthenticated && activeTimer && currentRoutineSteps.length > 0 && (
           <div className="mb-6">
             <RoutineTimer
               stepName={currentRoutineSteps[0].step.split('. ')[1]}
@@ -387,9 +390,12 @@ const Routine: React.FC = () => {
                 </>
               )}
             </h2>
-            <span className="text-sm text-gray-500">
-              {currentRoutineSteps.filter(step => step.completed).length}/{currentRoutineSteps.length} done
-            </span>
+            {/* Only show completion count for authenticated users */}
+            {isAuthenticated && (
+              <span className="text-sm text-gray-500">
+                {currentRoutineSteps.filter(step => step.completed).length}/{currentRoutineSteps.length} done
+              </span>
+            )}
           </div>
           
           {currentRoutineSteps.map((step, index) => (
@@ -426,11 +432,13 @@ const Routine: React.FC = () => {
           </Button>
         </div>
 
-        {/* CTA Popup */}
-        <CTAPopup
-          isOpen={showCTA}
-          onClose={() => setShowCTA(false)}
-        />
+        {/* CTA Popup - Only for authenticated users */}
+        {isAuthenticated && (
+          <CTAPopup
+            isOpen={showCTA}
+            onClose={() => setShowCTA(false)}
+          />
+        )}
       </div>
     </div>
   );
