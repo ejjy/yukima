@@ -28,6 +28,10 @@ const Header: React.FC = () => {
     navigate('/auth');
   };
 
+  const handleLogoClick = () => {
+    navigate('/');
+  };
+
   const handleNotificationClick = (notificationId: string) => {
     markNotificationAsRead(notificationId);
   };
@@ -49,14 +53,19 @@ const Header: React.FC = () => {
   return (
     <header className="bg-white shadow-sm border-b border-soft-gray sticky top-0 z-50">
       <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center space-x-2">
+        {/* Clickable Logo */}
+        <button
+          onClick={handleLogoClick}
+          className="flex items-center space-x-2 hover:opacity-80 transition-opacity duration-200 focus:outline-none focus:ring-2 focus:ring-primary-blush focus:ring-offset-2 rounded-lg p-1"
+          aria-label="Go to home page"
+        >
           <div className="w-8 h-8 bg-gradient-to-br from-primary-blush to-primary-lavender rounded-full flex items-center justify-center shadow-md">
             <Sparkles className="w-4 h-4 text-white" />
           </div>
           <h1 className="text-xl font-bold bg-gradient-to-r from-primary-blush to-primary-lavender bg-clip-text text-transparent">
             Yukima
           </h1>
-        </div>
+        </button>
         
         <div className="flex items-center space-x-2">
           {/* Language Toggle */}
