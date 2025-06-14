@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
-import { dupes, findDupes, getDupesByCategory, getBestSavings } from '../data/dupes';
+import { DupeService } from '../services/dupeService';
 import { Dupe } from '../types';
 import Button from '../components/UI/Button';
 import CTAPopup from '../components/UI/CTAPopup';
@@ -16,42 +16,82 @@ const DupeFinder: React.FC = () => {
   const [searchResults, setSearchResults] = useState<Dupe[]>([]);
   const [showCTA, setShowCTA] = useState(false);
   const [viewMode, setViewMode] = useState<'search' | 'category' | 'savings'>('search');
+  const [loading, setLoading] = useState(false);
 
   const categories = ['Cleanser', 'Serum', 'Moisturizer', 'Sunscreen', 'Mask', 'Toner', 'Eye Care'];
 
   useEffect(() => {
     // Show best savings by default
     if (viewMode === 'savings') {
-      setSearchResults(getBestSavings());
+      loadBestSavings();
     }
   }, [viewMode]);
 
-  const handleSearch = () => {
-    if (!searchTerm.trim()) return;
-    
-    const results = findDupes(searchTerm, selectedCategory);
-    setSearchResults(results);
-    setViewMode('search');
-    
-    // Show CTA popup after 3 searches
-    const searchCount = parseInt(sessionStorage.getItem('dupe_searches') || '0') + 1;
-    sessionStorage.setItem('dupe_searches', searchCount.toString());
-    
-    if (searchCount >= 3) {
-      setTimeout(() => setShowCTA(true), 2000);
+  const loadBestSavings = async () => {
+    setLoading(true);
+    try {
+      const results = await DupeService.getBestSavings();
+      setSearchResults(results);
+    } catch (error) {
+      console.error('Error loading best savings:', error);
+      // Fallback to mock data
+      const { getBestSavings } = await import('../data/dupes');
+      const results = await getBestSavings();
+      setSearchResults(results);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleCategoryFilter = (category: string) => {
+  const handleSearch = async () => {
+    if (!searchTerm.trim()) return;
+    
+    setLoading(true);
+    try {
+      const results = await DupeService.findDupes(searchTerm, selectedCategory);
+      setSearchResults(results);
+      setViewMode('search');
+      
+      // Show CTA popup after 3 searches
+      const searchCount = parseInt(sessionStorage.getItem('dupe_searches') || '0') + 1;
+      sessionStorage.setItem('dupe_searches', searchCount.toString());
+      
+      if (searchCount >= 3) {
+        setTimeout(() => setShowCTA(true), 2000);
+      }
+    } catch (error) {
+      console.error('Error searching dupes:', error);
+      // Fallback to mock data
+      const { findDupes } = await import('../data/dupes');
+      const results = await findDupes(searchTerm, selectedCategory);
+      setSearchResults(results);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCategoryFilter = async (category: string) => {
     setSelectedCategory(category);
-    const results = getDupesByCategory(category);
-    setSearchResults(results);
-    setViewMode('category');
+    setLoading(true);
+    
+    try {
+      const results = await DupeService.getDupesByCategory(category);
+      setSearchResults(results);
+      setViewMode('category');
+    } catch (error) {
+      console.error('Error filtering by category:', error);
+      // Fallback to mock data
+      const { getDupesByCategory } = await import('../data/dupes');
+      const results = await getDupesByCategory(category);
+      setSearchResults(results);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleShowBestSavings = () => {
     setViewMode('savings');
-    setSearchResults(getBestSavings());
+    loadBestSavings();
   };
 
   const handleBack = () => {
@@ -164,7 +204,7 @@ const DupeFinder: React.FC = () => {
               </select>
             </div>
             
-            <Button onClick={handleSearch} className="w-full">
+            <Button onClick={handleSearch} className="w-full" loading={loading}>
               <Search className="w-4 h-4 mr-2" />
               Find Dupes
             </Button>
@@ -213,7 +253,12 @@ const DupeFinder: React.FC = () => {
 
         {/* Results */}
         <div className="space-y-4">
-          {searchResults.length > 0 ? (
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="w-8 h-8 border-2 border-blush-200 border-t-blush-500 rounded-full animate-spin mx-auto mb-2"></div>
+              <p className="text-gray-600">Loading dupes...</p>
+            </div>
+          ) : searchResults.length > 0 ? (
             <>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">

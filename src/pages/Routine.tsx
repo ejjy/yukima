@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { getRecommendedProducts } from '../data/products';
+import { ProductService } from '../services/productService';
 import { Routine as RoutineType, RoutineStep, Product } from '../types';
 import Button from '../components/UI/Button';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
@@ -66,12 +66,13 @@ const Routine: React.FC = () => {
       const skinType = scanResult?.skinType || profile.skinType;
       const concerns = scanResult?.concerns || profile.concerns;
 
-      const recommendedProducts = getRecommendedProducts(
+      // Fetch recommended products from Supabase
+      const recommendedProducts = await ProductService.getRecommendedProducts({
         skinType,
         concerns,
-        profile.budget,
-        profile.productPreference
-      );
+        budget: profile.budget,
+        productPreference: profile.productPreference
+      });
 
       // Create morning and evening routines with budget optimization
       const { morningSteps, eveningSteps, totalCost } = createOptimizedRoutine(recommendedProducts, profile.budget);
@@ -90,6 +91,19 @@ const Routine: React.FC = () => {
       }
     } catch (error) {
       console.error('Error generating routine:', error);
+      
+      // Fallback to mock data if Supabase fails
+      console.log('Falling back to mock data...');
+      const { products } = await import('../data/products');
+      const { morningSteps, eveningSteps, totalCost } = createOptimizedRoutine(products.slice(0, 10), profile.budget);
+      
+      const newRoutine: RoutineType = {
+        morning: morningSteps,
+        evening: eveningSteps,
+        totalCost
+      };
+
+      setRoutine(newRoutine);
     } finally {
       setLoading(false);
     }
@@ -158,7 +172,7 @@ const Routine: React.FC = () => {
     }
   };
 
-  const handleProductSwap = (period: 'morning' | 'evening', stepIndex: number, newProduct: Product) => {
+  const handleProductSwap = async (period: 'morning' | 'evening', stepIndex: number, newProduct: Product) => {
     if (!routine) return;
 
     const updatedRoutine = { ...routine };
