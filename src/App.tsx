@@ -8,7 +8,6 @@ import { FaceScanPage } from './pages/FaceScanPage';
 import { RoutinePage } from './pages/RoutinePage';
 import { DupeFinderPage } from './pages/DupeFinderPage';
 import { IngredientAnalyzerPage } from './pages/IngredientAnalyzerPage';
-import { TestAIButton } from './components/UI/TestAIButton';
 import { TestBackendButton } from './components/UI/TestBackendButton';
 
 function App() {
@@ -25,7 +24,6 @@ function App() {
               <Route path="/dupe-finder" element={<DupeFinderPage />} />
               <Route path="/ingredient-analyzer" element={<IngredientAnalyzerPage />} />
             </Routes>
-            <TestAIButton />
             <TestBackendButton />
           </div>
         </Router>
