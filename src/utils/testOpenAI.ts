@@ -1,0 +1,308 @@
+interface TestResult {
+  test: string;
+  status: 'pass' | 'fail';
+  message: string;
+  duration?: number;
+  data?: any;
+}
+
+export class OpenAITestSuite {
+  private results: TestResult[] = [];
+
+  private log(test: string, status: 'pass' | 'fail', message: string, duration?: number, data?: any) {
+    this.results.push({ test, status, message, duration, data });
+    console.log(`[${status.toUpperCase()}] ${test}: ${message}${duration ? ` (${duration}ms)` : ''}`);
+  }
+
+  async testOpenAIConnection() {
+    const startTime = Date.now();
+    try {
+      // Test basic OpenAI connection with a simple completion
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4',
+          messages: [
+            {
+              role: 'user',
+              content: 'Respond with just "OK" if you can read this message.'
+            }
+          ],
+          max_tokens: 10,
+          temperature: 0
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`API Error: ${errorData.error?.message || 'Unknown error'}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content;
+
+      if (content && content.toLowerCase().includes('ok')) {
+        this.log('OpenAI Connection', 'pass', 'Successfully connected to OpenAI API', Date.now() - startTime);
+        return true;
+      } else {
+        throw new Error('Unexpected response from OpenAI');
+      }
+    } catch (error) {
+      this.log('OpenAI Connection', 'fail', `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`, Date.now() - startTime);
+      return false;
+    }
+  }
+
+  async testFaceScanAnalysis() {
+    const startTime = Date.now();
+    try {
+      // Create a minimal test image (1x1 pixel JPEG in base64)
+      const testImageBase64 = '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=';
+
+      const testProfile = {
+        skinType: 'combination',
+        concerns: ['acne', 'large_pores'],
+        ageRange: '25-30'
+      };
+
+      // Call the face scan edge function
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-face-scan`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageData: testImageBase64,
+          userProfile: testProfile
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Face scan API error: ${errorData.error || response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      if (result.success && result.result) {
+        this.log('Face Scan Analysis', 'pass', `Analysis completed with ${result.result.confidence}% confidence`, Date.now() - startTime, result.result);
+        return true;
+      } else {
+        throw new Error(result.error || 'Invalid response format');
+      }
+    } catch (error) {
+      this.log('Face Scan Analysis', 'fail', `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`, Date.now() - startTime);
+      return false;
+    }
+  }
+
+  async testIngredientAnalysis() {
+    const startTime = Date.now();
+    try {
+      const testIngredients = ['niacinamide', 'salicylic acid', 'hyaluronic acid'];
+      const testProfile = {
+        skinType: 'oily',
+        concerns: ['acne', 'large_pores']
+      };
+
+      // Call the ingredient analysis edge function
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-ingredients`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ingredients: testIngredients,
+          userProfile: testProfile
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Ingredient analysis API error: ${errorData.error || response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      if (result.success && result.results && Array.isArray(result.results)) {
+        this.log('Ingredient Analysis', 'pass', `Analyzed ${result.results.length} ingredients, overall safety: ${result.overall_safety}%`, Date.now() - startTime, result);
+        return true;
+      } else {
+        throw new Error(result.error || 'Invalid response format');
+      }
+    } catch (error) {
+      this.log('Ingredient Analysis', 'fail', `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`, Date.now() - startTime);
+      return false;
+    }
+  }
+
+  async testRoutineGeneration() {
+    const startTime = Date.now();
+    try {
+      const testProfile = {
+        ageRange: '25-30',
+        skinType: 'combination',
+        concerns: ['acne', 'dullness'],
+        budget: 999,
+        productPreference: 'Natural'
+      };
+
+      const testScanResults = {
+        skinType: 'combination',
+        concerns: ['acne', 'large_pores'],
+        confidence: 85
+      };
+
+      // Call the routine generation edge function
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-routine`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userProfile: testProfile,
+          scanResults: testScanResults
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Routine generation API error: ${errorData.error || response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      if (result.success && result.morning_routine && result.evening_routine) {
+        const totalProducts = result.morning_routine.length + result.evening_routine.length;
+        this.log('Routine Generation', 'pass', `Generated routine with ${totalProducts} products, total cost: ₹${result.total_cost}`, Date.now() - startTime, result);
+        return true;
+      } else {
+        throw new Error(result.error || 'Invalid response format');
+      }
+    } catch (error) {
+      this.log('Routine Generation', 'fail', `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`, Date.now() - startTime);
+      return false;
+    }
+  }
+
+  async testAPIKeyValidation() {
+    const startTime = Date.now();
+    try {
+      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      
+      if (!apiKey) {
+        throw new Error('OpenAI API key not found in environment variables');
+      }
+
+      if (!apiKey.startsWith('sk-')) {
+        throw new Error('Invalid OpenAI API key format');
+      }
+
+      if (apiKey.length < 20) {
+        throw new Error('OpenAI API key appears to be too short');
+      }
+
+      this.log('API Key Validation', 'pass', 'OpenAI API key format is valid', Date.now() - startTime);
+      return true;
+    } catch (error) {
+      this.log('API Key Validation', 'fail', `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`, Date.now() - startTime);
+      return false;
+    }
+  }
+
+  async testEdgeFunctionEnvironment() {
+    const startTime = Date.now();
+    try {
+      // Test if Supabase environment is properly configured
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error('Supabase environment variables not configured');
+      }
+
+      // Test edge function accessibility
+      const response = await fetch(`${supabaseUrl}/functions/v1/analyze-face-scan`, {
+        method: 'OPTIONS',
+        headers: {
+          'Authorization': `Bearer ${supabaseKey}`,
+        }
+      });
+
+      if (response.ok || response.status === 200) {
+        this.log('Edge Function Environment', 'pass', 'Supabase edge functions are accessible', Date.now() - startTime);
+        return true;
+      } else {
+        throw new Error(`Edge functions not accessible: ${response.status}`);
+      }
+    } catch (error) {
+      this.log('Edge Function Environment', 'fail', `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`, Date.now() - startTime);
+      return false;
+    }
+  }
+
+  async runFullTest() {
+    console.log('🤖 Starting OpenAI Integration Test Suite...\n');
+    
+    const tests = [
+      () => this.testAPIKeyValidation(),
+      () => this.testEdgeFunctionEnvironment(),
+      () => this.testOpenAIConnection(),
+      () => this.testFaceScanAnalysis(),
+      () => this.testIngredientAnalysis(),
+      () => this.testRoutineGeneration()
+    ];
+
+    let passed = 0;
+    let failed = 0;
+
+    for (const test of tests) {
+      const result = await test();
+      if (result) passed++;
+      else failed++;
+    }
+
+    console.log('\n📊 OpenAI Integration Test Results:');
+    console.log(`✅ Passed: ${passed}`);
+    console.log(`❌ Failed: ${failed}`);
+    console.log(`📈 Success Rate: ${Math.round((passed / (passed + failed)) * 100)}%`);
+
+    // Show detailed results for failed tests
+    const failedTests = this.results.filter(r => r.status === 'fail');
+    if (failedTests.length > 0) {
+      console.log('\n❌ Failed Tests Details:');
+      failedTests.forEach(test => {
+        console.log(`  • ${test.test}: ${test.message}`);
+      });
+    }
+
+    // Show successful test data
+    const successfulTests = this.results.filter(r => r.status === 'pass' && r.data);
+    if (successfulTests.length > 0) {
+      console.log('\n✅ Successful Test Data:');
+      successfulTests.forEach(test => {
+        if (test.data) {
+          console.log(`  • ${test.test}:`, test.data);
+        }
+      });
+    }
+
+    return { passed, failed, results: this.results };
+  }
+
+  getResults() {
+    return this.results;
+  }
+}
+
+export async function testOpenAIIntegration() {
+  const testSuite = new OpenAITestSuite();
+  return await testSuite.runFullTest();
+}

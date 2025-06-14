@@ -5,7 +5,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { UserProvider } from './contexts/UserContext';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
-import { TestAIButton } from './components/UI/TestAIButton';
+import { TestOpenAIButton } from './components/UI/TestOpenAIButton';
 import Welcome from './pages/Welcome';
 import Quiz from './pages/Quiz';
 import Auth from './pages/Auth';
@@ -41,8 +41,8 @@ function App() {
               </main>
               <Footer />
               
-              {/* AI Test Button - Only in development */}
-              {import.meta.env.DEV && <TestAIButton />}
+              {/* OpenAI Test Button - Only in development */}
+              {import.meta.env.DEV && <TestOpenAIButton />}
             </div>
           </Router>
         </UserProvider>
