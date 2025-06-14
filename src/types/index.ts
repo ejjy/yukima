@@ -1,6 +1,6 @@
 export interface UserProfile {
   ageRange: '18-24' | '25-30' | '31-35';
-  skinType: 'Oily' | 'Dry' | 'Combo' | 'Sensitive';
+  skinType: 'Oily' | 'Dry' | 'Combo' | 'Sensitive' | 'Normal' | 'Acne-prone' | 'Mature';
   concerns: string[];
   budget: 299 | 499 | 999;
   productPreference: 'Ayurvedic' | 'Natural' | 'Doesn\'t Matter';

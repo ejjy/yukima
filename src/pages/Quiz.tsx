@@ -29,11 +29,43 @@ const Quiz: React.FC = () => {
     {
       key: 'skinType',
       title: t('quiz.skinType'),
+      subtitle: 'Choose the option that best describes your skin',
       options: [
-        { value: 'Oily', label: 'Oily - Shiny, large pores' },
-        { value: 'Dry', label: 'Dry - Tight, flaky' },
-        { value: 'Combo', label: 'Combination - Oily T-zone, dry cheeks' },
-        { value: 'Sensitive', label: 'Sensitive - Easily irritated' }
+        { 
+          value: 'Oily', 
+          label: 'Oily', 
+          description: 'Shiny appearance, large pores, frequent breakouts'
+        },
+        { 
+          value: 'Dry', 
+          label: 'Dry', 
+          description: 'Tight feeling, flaky patches, rough texture'
+        },
+        { 
+          value: 'Combo', 
+          label: 'Combination', 
+          description: 'Oily T-zone (forehead, nose, chin), dry cheeks'
+        },
+        { 
+          value: 'Sensitive', 
+          label: 'Sensitive', 
+          description: 'Easily irritated, redness, stinging with products'
+        },
+        { 
+          value: 'Normal', 
+          label: 'Normal', 
+          description: 'Balanced, not too oily or dry, minimal issues'
+        },
+        { 
+          value: 'Acne-prone', 
+          label: 'Acne-prone', 
+          description: 'Frequent breakouts, blackheads, inflamed pimples'
+        },
+        { 
+          value: 'Mature', 
+          label: 'Mature', 
+          description: 'Fine lines, loss of elasticity, age spots'
+        }
       ]
     },
     {
@@ -48,7 +80,9 @@ const Quiz: React.FC = () => {
         { value: 'Fine Lines', label: 'Fine Lines & Aging' },
         { value: 'Large Pores', label: 'Large Pores' },
         { value: 'Dark Circles', label: 'Dark Circles' },
-        { value: 'Tan', label: 'Tan & Sun Damage' }
+        { value: 'Tan', label: 'Tan & Sun Damage' },
+        { value: 'Sensitivity', label: 'Skin Sensitivity' },
+        { value: 'Uneven Texture', label: 'Uneven Skin Texture' }
       ]
     },
     {
@@ -176,9 +210,14 @@ const Quiz: React.FC = () => {
 
         {/* Question */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-soft-gray mb-6">
-          <h2 className="text-lg font-semibold text-deep-charcoal mb-4">
+          <h2 className="text-lg font-semibold text-deep-charcoal mb-2">
             {currentStepData.title}
           </h2>
+          {currentStepData.subtitle && (
+            <p className="text-sm text-deep-charcoal/70 mb-4">
+              {currentStepData.subtitle}
+            </p>
+          )}
           
           <div className="space-y-3">
             {currentStepData.options.map((option) => (
@@ -192,9 +231,18 @@ const Quiz: React.FC = () => {
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-deep-charcoal">{option.label}</span>
+                  <div className="flex-1">
+                    <span className="font-medium text-deep-charcoal block">
+                      {option.label}
+                    </span>
+                    {option.description && (
+                      <span className="text-sm text-deep-charcoal/60 mt-1 block">
+                        {option.description}
+                      </span>
+                    )}
+                  </div>
                   {isOptionSelected(option.value) && (
-                    <div className="w-5 h-5 bg-primary-blush rounded-full flex items-center justify-center shadow-sm">
+                    <div className="w-5 h-5 bg-primary-blush rounded-full flex items-center justify-center shadow-sm ml-3">
                       <div className="w-2 h-2 bg-white rounded-full" />
                     </div>
                   )}

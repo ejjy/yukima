@@ -30,9 +30,10 @@ export class ProductService {
       .from('products')
       .select('*');
 
-    // Apply filters
+    // Apply skin type filter with expanded compatibility
     if (filters.skinType) {
-      query = query.contains('skin_type', [filters.skinType]);
+      const skinTypeCompatibility = this.getSkinTypeCompatibility(filters.skinType);
+      query = query.overlaps('skin_type', skinTypeCompatibility);
     }
 
     if (filters.concerns && filters.concerns.length > 0) {
@@ -68,6 +69,21 @@ export class ProductService {
     }
 
     return data || [];
+  }
+
+  // Map new skin types to compatible existing product categories
+  private static getSkinTypeCompatibility(skinType: string): string[] {
+    const compatibilityMap: { [key: string]: string[] } = {
+      'Oily': ['Oily', 'Combo'],
+      'Dry': ['Dry', 'Sensitive'],
+      'Combo': ['Combo', 'Oily', 'Normal'],
+      'Sensitive': ['Sensitive', 'Dry'],
+      'Normal': ['Normal', 'All', 'Combo'],
+      'Acne-prone': ['Oily', 'Combo', 'Acne-prone'],
+      'Mature': ['Dry', 'Normal', 'Mature', 'All']
+    };
+
+    return compatibilityMap[skinType] || [skinType, 'All'];
   }
 
   static async getProductsByStep(step: string): Promise<Product[]> {
