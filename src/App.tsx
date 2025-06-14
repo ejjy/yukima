@@ -5,7 +5,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { UserProvider } from './contexts/UserContext';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
-import TestAIButton from './components/UI/TestAIButton';
+import { TestAIButton } from './components/UI/TestAIButton';
 import Welcome from './pages/Welcome';
 import Quiz from './pages/Quiz';
 import Auth from './pages/Auth';
