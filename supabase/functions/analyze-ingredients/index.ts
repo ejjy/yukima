@@ -2,14 +2,14 @@ import { corsHeaders } from '../_shared/cors.ts';
 
 interface IngredientAnalysisRequest {
   ingredients: string[];
-  userProfile?: {
-    skin_type?: string;
-    concerns?: string[];
+  userProfile: {
+    skinType: string;
+    concerns: string[];
   };
 }
 
 interface IngredientResult {
-  name: string;
+  ingredient: string;
   safety_score: number;
   compatibility: 'excellent' | 'good' | 'caution' | 'avoid';
   benefits: string[];
@@ -23,152 +23,6 @@ interface IngredientAnalysisResponse {
   overall_safety?: number;
   recommendations?: string[];
   error?: string;
-}
-
-// Comprehensive ingredient database
-const INGREDIENT_DATABASE: Record<string, {
-  safety_score: number;
-  benefits: string[];
-  warnings: string[];
-  skin_types: Record<string, number>; // compatibility scores
-  concerns: Record<string, number>; // effectiveness scores
-  alternatives?: string[];
-}> = {
-  'niacinamide': {
-    safety_score: 95,
-    benefits: ['Reduces pore appearance', 'Controls oil production', 'Brightens skin'],
-    warnings: ['May cause flushing in high concentrations'],
-    skin_types: { oily: 95, combination: 90, dry: 85, sensitive: 80 },
-    concerns: { acne: 90, large_pores: 95, dullness: 85, pigmentation: 80 },
-    alternatives: ['zinc oxide', 'azelaic acid']
-  },
-  'salicylic acid': {
-    safety_score: 85,
-    benefits: ['Unclogs pores', 'Reduces acne', 'Gentle exfoliation'],
-    warnings: ['Can cause dryness', 'Increase sun sensitivity', 'Avoid during pregnancy'],
-    skin_types: { oily: 95, combination: 85, dry: 60, sensitive: 50 },
-    concerns: { acne: 95, large_pores: 85, dullness: 70 },
-    alternatives: ['lactic acid', 'mandelic acid']
-  },
-  'hyaluronic acid': {
-    safety_score: 98,
-    benefits: ['Intense hydration', 'Plumps skin', 'Suitable for all skin types'],
-    warnings: ['May feel sticky in humid climates'],
-    skin_types: { oily: 90, combination: 95, dry: 98, sensitive: 95 },
-    concerns: { dryness: 98, fine_lines: 90, dullness: 80 },
-    alternatives: ['glycerin', 'sodium hyaluronate']
-  },
-  'retinol': {
-    safety_score: 70,
-    benefits: ['Anti-aging', 'Improves texture', 'Reduces acne'],
-    warnings: ['Can cause irritation', 'Increase sun sensitivity', 'Avoid during pregnancy'],
-    skin_types: { oily: 85, combination: 80, dry: 70, sensitive: 40 },
-    concerns: { acne: 85, fine_lines: 95, pigmentation: 80, dullness: 85 },
-    alternatives: ['bakuchiol', 'peptides']
-  },
-  'vitamin c': {
-    safety_score: 80,
-    benefits: ['Antioxidant protection', 'Brightens skin', 'Boosts collagen'],
-    warnings: ['Can oxidize easily', 'May cause irritation in sensitive skin'],
-    skin_types: { oily: 85, combination: 85, dry: 80, sensitive: 65 },
-    concerns: { pigmentation: 90, dullness: 95, fine_lines: 80 },
-    alternatives: ['magnesium ascorbyl phosphate', 'arbutin']
-  },
-  'glycolic acid': {
-    safety_score: 75,
-    benefits: ['Deep exfoliation', 'Improves texture', 'Reduces pigmentation'],
-    warnings: ['Can cause irritation', 'Increase sun sensitivity', 'Start with low concentration'],
-    skin_types: { oily: 90, combination: 80, dry: 70, sensitive: 45 },
-    concerns: { acne: 80, pigmentation: 90, dullness: 95, fine_lines: 85 },
-    alternatives: ['lactic acid', 'mandelic acid']
-  },
-  'benzoyl peroxide': {
-    safety_score: 70,
-    benefits: ['Kills acne bacteria', 'Reduces inflammation', 'Fast-acting'],
-    warnings: ['Can bleach fabrics', 'May cause dryness', 'Can be irritating'],
-    skin_types: { oily: 85, combination: 75, dry: 50, sensitive: 40 },
-    concerns: { acne: 95, large_pores: 70 },
-    alternatives: ['tea tree oil', 'sulfur']
-  },
-  'ceramides': {
-    safety_score: 96,
-    benefits: ['Strengthens skin barrier', 'Prevents moisture loss', 'Soothes irritation'],
-    warnings: ['None known'],
-    skin_types: { oily: 80, combination: 90, dry: 98, sensitive: 95 },
-    concerns: { dryness: 95, sensitivity: 90, fine_lines: 75 },
-    alternatives: ['cholesterol', 'fatty acids']
-  },
-  'peptides': {
-    safety_score: 92,
-    benefits: ['Stimulates collagen', 'Firms skin', 'Reduces fine lines'],
-    warnings: ['Results take time to show'],
-    skin_types: { oily: 85, combination: 90, dry: 95, sensitive: 90 },
-    concerns: { fine_lines: 95, dullness: 80, firmness: 90 },
-    alternatives: ['retinol', 'vitamin c']
-  },
-  'zinc oxide': {
-    safety_score: 98,
-    benefits: ['Broad spectrum sun protection', 'Anti-inflammatory', 'Suitable for sensitive skin'],
-    warnings: ['Can leave white cast'],
-    skin_types: { oily: 90, combination: 95, dry: 90, sensitive: 98 },
-    concerns: { acne: 80, sensitivity: 95, pigmentation: 85 },
-    alternatives: ['titanium dioxide', 'chemical sunscreens']
-  }
-};
-
-function analyzeIngredient(
-  ingredientName: string, 
-  userProfile?: { skin_type?: string; concerns?: string[] }
-): IngredientResult {
-  const normalizedName = ingredientName.toLowerCase().trim();
-  const ingredientData = INGREDIENT_DATABASE[normalizedName];
-  
-  if (!ingredientData) {
-    // Unknown ingredient - provide conservative analysis
-    return {
-      name: ingredientName,
-      safety_score: 60,
-      compatibility: 'caution',
-      benefits: ['Unknown ingredient - research recommended'],
-      warnings: ['Limited safety data available', 'Patch test recommended'],
-      alternatives: ['Well-researched alternatives recommended']
-    };
-  }
-
-  let adjustedSafetyScore = ingredientData.safety_score;
-  let compatibility: 'excellent' | 'good' | 'caution' | 'avoid' = 'good';
-
-  // Adjust based on user's skin type
-  if (userProfile?.skin_type) {
-    const skinTypeScore = ingredientData.skin_types[userProfile.skin_type] || 70;
-    adjustedSafetyScore = Math.round((adjustedSafetyScore + skinTypeScore) / 2);
-  }
-
-  // Determine compatibility level
-  if (adjustedSafetyScore >= 90) compatibility = 'excellent';
-  else if (adjustedSafetyScore >= 75) compatibility = 'good';
-  else if (adjustedSafetyScore >= 60) compatibility = 'caution';
-  else compatibility = 'avoid';
-
-  // Add concern-specific benefits
-  const enhancedBenefits = [...ingredientData.benefits];
-  if (userProfile?.concerns) {
-    for (const concern of userProfile.concerns) {
-      const effectivenessScore = ingredientData.concerns[concern];
-      if (effectivenessScore && effectivenessScore >= 80) {
-        enhancedBenefits.push(`Highly effective for ${concern}`);
-      }
-    }
-  }
-
-  return {
-    name: ingredientName,
-    safety_score: adjustedSafetyScore,
-    compatibility,
-    benefits: enhancedBenefits,
-    warnings: ingredientData.warnings,
-    alternatives: ingredientData.alternatives
-  };
 }
 
 Deno.serve(async (req: Request) => {
@@ -206,7 +60,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Limit number of ingredients to prevent abuse
+    // Limit number of ingredients
     if (body.ingredients.length > 20) {
       return new Response(
         JSON.stringify({ success: false, error: 'Maximum 20 ingredients allowed per request' }),
@@ -217,13 +71,103 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
+    // Get OpenAI API key from environment
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openaiApiKey) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'OpenAI API key not configured' }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
 
-    // Analyze each ingredient
-    const results: IngredientResult[] = body.ingredients.map(ingredient => 
-      analyzeIngredient(ingredient, body.userProfile)
-    );
+    // Prepare the prompt for OpenAI
+    const prompt = `
+You are a cosmetic chemist and dermatologist. Analyze these skincare ingredients for safety and compatibility.
+
+Ingredients to analyze: ${body.ingredients.join(', ')}
+
+User Profile:
+- Skin type: ${body.userProfile.skinType}
+- Concerns: ${body.userProfile.concerns.join(', ')}
+
+For each ingredient, provide:
+1. Safety score (0-100)
+2. Compatibility level (excellent/good/caution/avoid) for this user's skin type
+3. Benefits for this skin type
+4. Warnings or side effects
+5. Alternative ingredients if needed
+
+Respond in JSON format only:
+[
+  {
+    "ingredient": "ingredient_name",
+    "safety_score": 85,
+    "compatibility": "good",
+    "benefits": ["benefit1", "benefit2"],
+    "warnings": ["warning1", "warning2"],
+    "alternatives": ["alternative1", "alternative2"]
+  }
+]
+`;
+
+    // Call OpenAI API
+    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert cosmetic chemist and dermatologist specializing in ingredient analysis for Indian skin types and climate conditions.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_tokens: 2000,
+        temperature: 0.2
+      })
+    });
+
+    if (!openaiResponse.ok) {
+      const errorData = await openaiResponse.json();
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const openaiData = await openaiResponse.json();
+    const content = openaiData.choices?.[0]?.message?.content;
+
+    if (!content) {
+      throw new Error('No response from OpenAI');
+    }
+
+    // Parse the JSON response from OpenAI
+    let analysis;
+    try {
+      analysis = JSON.parse(content);
+    } catch (parseError) {
+      throw new Error('Invalid JSON response from OpenAI');
+    }
+
+    // Validate and sanitize the response
+    const results: IngredientResult[] = analysis.map((item: any) => ({
+      ingredient: item.ingredient || 'Unknown',
+      safety_score: Math.min(100, Math.max(0, item.safety_score || 70)),
+      compatibility: ['excellent', 'good', 'caution', 'avoid'].includes(item.compatibility) 
+        ? item.compatibility 
+        : 'good',
+      benefits: Array.isArray(item.benefits) ? item.benefits : ['General skincare benefits'],
+      warnings: Array.isArray(item.warnings) ? item.warnings : ['Patch test recommended'],
+      alternatives: Array.isArray(item.alternatives) ? item.alternatives : []
+    }));
 
     // Calculate overall safety score
     const overallSafety = Math.round(
@@ -236,11 +180,11 @@ Deno.serve(async (req: Request) => {
     const excellentIngredients = results.filter(r => r.compatibility === 'excellent');
 
     if (cautionIngredients.length > 0) {
-      recommendations.push(`Consider patch testing products with: ${cautionIngredients.map(r => r.name).join(', ')}`);
+      recommendations.push(`Consider patch testing products with: ${cautionIngredients.map(r => r.ingredient).join(', ')}`);
     }
 
     if (excellentIngredients.length > 0) {
-      recommendations.push(`Great ingredients for your skin: ${excellentIngredients.map(r => r.name).join(', ')}`);
+      recommendations.push(`Great ingredients for your skin: ${excellentIngredients.map(r => r.ingredient).join(', ')}`);
     }
 
     if (overallSafety >= 85) {
