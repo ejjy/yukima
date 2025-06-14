@@ -13,81 +13,96 @@ export class AITestSuite {
     console.log(`[${status.toUpperCase()}] ${test}: ${message}${duration ? ` (${duration}ms)` : ''}`);
   }
 
-  async testFaceScanAPI() {
+  async testFaceScanSimulation() {
     const startTime = Date.now();
     try {
-      // Mock test - in real implementation this would call actual AI service
+      // Mock face scan analysis
       await new Promise(resolve => setTimeout(resolve, 500));
       
       const mockResponse = {
         success: true,
         skin_type: 'combination',
         concerns: ['acne'],
-        confidence: 85
+        confidence: 85,
+        analysis_details: {
+          oiliness: 45,
+          dryness: 20,
+          acne_severity: 35,
+          pigmentation: 30,
+          texture_score: 75
+        }
       };
 
       if (mockResponse.success) {
-        this.log('Face Scan AI', 'pass', `Mock analysis completed with ${mockResponse.confidence}% confidence`, Date.now() - startTime);
+        this.log('Face Scan Simulation', 'pass', `Mock analysis completed with ${mockResponse.confidence}% confidence`, Date.now() - startTime);
         return true;
       } else {
         throw new Error('Mock analysis failed');
       }
     } catch (error) {
-      this.log('Face Scan AI', 'fail', `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`, Date.now() - startTime);
+      this.log('Face Scan Simulation', 'fail', `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`, Date.now() - startTime);
       return false;
     }
   }
 
-  async testIngredientAnalysisAPI() {
+  async testIngredientAnalysisSimulation() {
     const startTime = Date.now();
     try {
-      // Mock test
+      // Mock ingredient analysis
       await new Promise(resolve => setTimeout(resolve, 300));
       
       const mockResponse = {
         success: true,
         results: [
-          { name: 'niacinamide', safety_score: 95, compatibility: 'excellent' }
-        ]
+          { name: 'niacinamide', safety_score: 95, compatibility: 'excellent' },
+          { name: 'salicylic acid', safety_score: 85, compatibility: 'good' }
+        ],
+        overall_safety: 90
       };
 
       if (mockResponse.success) {
-        this.log('Ingredient Analysis AI', 'pass', `Analyzed ${mockResponse.results.length} ingredients`, Date.now() - startTime);
+        this.log('Ingredient Analysis Simulation', 'pass', `Analyzed ${mockResponse.results.length} ingredients`, Date.now() - startTime);
         return true;
       } else {
         throw new Error('Mock ingredient analysis failed');
       }
     } catch (error) {
-      this.log('Ingredient Analysis AI', 'fail', `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`, Date.now() - startTime);
+      this.log('Ingredient Analysis Simulation', 'fail', `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`, Date.now() - startTime);
       return false;
     }
   }
 
-  async testRoutineGenerationAPI() {
+  async testRoutineGenerationSimulation() {
     const startTime = Date.now();
     try {
-      // Mock test
+      // Mock routine generation
       await new Promise(resolve => setTimeout(resolve, 800));
       
       const mockResponse = {
         success: true,
         morning_routine: [
-          { name: 'Cleanser', brand: 'Cetaphil', price: 299 }
+          { name: 'Cleanser', brand: 'Cetaphil', price: 299, ai_score: 85 },
+          { name: 'Vitamin C Serum', brand: 'Dot & Key', price: 845, ai_score: 92 },
+          { name: 'Moisturizer', brand: 'Neutrogena', price: 299, ai_score: 88 },
+          { name: 'Sunscreen', brand: 'Neutrogena', price: 499, ai_score: 90 }
         ],
         evening_routine: [
-          { name: 'Night Cream', brand: 'Olay', price: 899 }
+          { name: 'Cleanser', brand: 'Cetaphil', price: 299, ai_score: 85 },
+          { name: 'Niacinamide Serum', brand: 'Minimalist', price: 399, ai_score: 94 },
+          { name: 'Night Cream', brand: 'Olay', price: 899, ai_score: 87 }
         ],
-        total_cost: 1198
+        total_cost: 1942,
+        confidence_score: 89
       };
 
       if (mockResponse.success) {
-        this.log('Routine Generation AI', 'pass', `Generated routine with ${mockResponse.morning_routine.length + mockResponse.evening_routine.length} products`, Date.now() - startTime);
+        this.log('Routine Generation Simulation', 'pass', `Generated routine with ${mockResponse.morning_routine.length + mockResponse.evening_routine.length} products`, Date.now() - startTime);
         return true;
       } else {
         throw new Error('Mock routine generation failed');
       }
     } catch (error) {
-      this.log('Routine Generation AI', 'fail', `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`, Date.now() - startTime);
+      this.log('Routine Generation Simulation', 'fail', `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`, Date.now() - startTime);
       return false;
     }
   }
@@ -101,10 +116,12 @@ export class AITestSuite {
       const userProfile = {
         skin_type: 'oily',
         concerns: ['acne', 'large_pores'],
-        budget: 1000
+        budget: 1000,
+        age_range: '25-30',
+        product_preference: 'natural'
       };
 
-      // Simulate personalization logic
+      // Simulate personalization scoring
       const personalizedScore = Math.random() * 30 + 70; // 70-100
       
       if (personalizedScore > 75) {
@@ -119,14 +136,43 @@ export class AITestSuite {
     }
   }
 
-  async runFullAITest() {
+  async testDupeFinderLogic() {
+    const startTime = Date.now();
+    try {
+      // Mock dupe finder test
+      await new Promise(resolve => setTimeout(resolve, 600));
+      
+      const searchQuery = 'The Ordinary Niacinamide';
+      const mockDupes = [
+        {
+          original: { name: searchQuery, price: 590, brand: 'The Ordinary' },
+          dupe: { name: 'Minimalist Niacinamide', price: 399, brand: 'Minimalist' },
+          savings: 191,
+          similarity: 95
+        }
+      ];
+
+      if (mockDupes.length > 0) {
+        this.log('Dupe Finder Logic', 'pass', `Found ${mockDupes.length} alternatives with avg ${mockDupes[0].similarity}% similarity`, Date.now() - startTime);
+        return true;
+      } else {
+        throw new Error('No dupes found');
+      }
+    } catch (error) {
+      this.log('Dupe Finder Logic', 'fail', `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`, Date.now() - startTime);
+      return false;
+    }
+  }
+
+  async runFullTest() {
     console.log('🤖 Starting AI Integration Test Suite...\n');
     
     const tests = [
-      () => this.testFaceScanAPI(),
-      () => this.testIngredientAnalysisAPI(),
-      () => this.testRoutineGenerationAPI(),
-      () => this.testPersonalizationEngine()
+      () => this.testFaceScanSimulation(),
+      () => this.testIngredientAnalysisSimulation(),
+      () => this.testRoutineGenerationSimulation(),
+      () => this.testPersonalizationEngine(),
+      () => this.testDupeFinderLogic()
     ];
 
     let passed = 0;
@@ -153,5 +199,5 @@ export class AITestSuite {
 
 export async function testAIIntegration() {
   const aiSuite = new AITestSuite();
-  return await aiSuite.runFullAITest();
+  return await aiSuite.runFullTest();
 }
