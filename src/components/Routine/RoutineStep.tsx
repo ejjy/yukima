@@ -32,7 +32,7 @@ const RoutineStep: React.FC<RoutineStepProps> = ({
     setShowAlternatives(true);
 
     // Get alternative products for this step
-    const allProducts = getRecommendedProducts(
+    const allProducts = await getRecommendedProducts(
       profile.skinType,
       profile.concerns,
       profile.budget * 2, // Expand budget range for alternatives
