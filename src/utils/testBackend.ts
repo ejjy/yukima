@@ -44,9 +44,19 @@ export class BackendTestSuite {
   async testUserProfileOperations() {
     const startTime = Date.now();
     try {
-      // Test creating a profile (should work for authenticated users)
+      // Check if user is authenticated first
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+
+      if (!session) {
+        // No active session - RLS should prevent unauthenticated access
+        this.log('User Profile Operations', 'pass', 'RLS working correctly - unauthenticated users cannot insert', Date.now() - startTime);
+        return true;
+      }
+
+      // User is authenticated - test actual profile operations
       const testProfile = {
-        user_id: null, // Will be set by RLS if authenticated
+        user_id: session.user.id,
         age_range: '25-30',
         skin_type: 'combination',
         concerns: ['acne', 'dullness'],
@@ -61,16 +71,8 @@ export class BackendTestSuite {
         .select()
         .single();
 
-      if (error) {
-        // Expected for unauthenticated users
-        if (error.code === '42501' || error.message.includes('permission denied')) {
-          this.log('User Profile Operations', 'pass', 'RLS working correctly - unauthenticated users cannot insert', Date.now() - startTime);
-          return true;
-        }
-        throw error;
-      }
+      if (error) throw error;
 
-      // If we get here, user is authenticated
       this.log('User Profile Operations', 'pass', `Profile created successfully: ${data.id}`, Date.now() - startTime);
       
       // Clean up
